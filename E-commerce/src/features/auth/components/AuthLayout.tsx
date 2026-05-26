@@ -19,8 +19,8 @@ export default function AuthLayout({
         <div className="text-center mb-8">
           
           {/* Logo */}
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-red-600 shadow-md mb-5">
-            <span className="text-white text-lg font-bold">SHOP LYZHIN</span>
+          <div className="inline-flex items-center justify-center w-25 h-7 rounded-2xl bg-red-600 shadow-md mb-5">
+            <span className="text-white text-lg font-bold">SHOP VN</span>
           </div>
 
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
