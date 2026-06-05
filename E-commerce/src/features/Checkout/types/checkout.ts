@@ -4,10 +4,6 @@ export interface CheckoutFormData {
   fullName: string;
   phone: string;
   address: string;
-  city: string;
-  district: string;
-  ward: string;
-  note?: string;
 }
 
 export interface CheckoutState {

@@ -16,10 +16,6 @@ export const useCheckoutValidation = () => {
       newErrors.phone = 'Số điện thoại không hợp lệ';
     }
     if (!data.address.trim()) newErrors.address = 'Vui lòng nhập địa chỉ';
-    if (!data.city) newErrors.city = 'Vui lòng chọn tỉnh/thành phố';
-    if (!data.district) newErrors.district = 'Vui lòng chọn quận/huyện';
-    if (!data.ward) newErrors.ward = 'Vui lòng chọn phường/xã';
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

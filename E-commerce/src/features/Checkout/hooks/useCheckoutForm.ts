@@ -1,6 +1,6 @@
-// features/Checkout/hooks/useCheckoutForm.ts
+import { useAuthStore } from "@/features/auth/store";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CheckoutFormData } from '../types/checkout';
 import { useCheckoutValidation } from './useCheckoutValidation';
@@ -18,16 +18,25 @@ export const useCheckoutForm = () => {
   const createPayment = useCreatePayment();
   const clearCart = useClearCart();
   const { items, totalPrice } = useCart();
+  const user = useAuthStore((state) => state.user);
 
   const [formData, setFormData] = useState<CheckoutFormData>({
-    fullName: '',
-    phone: '',
-    address: '',
-    city: '',
-    district: '',
-    ward: '',
-    note: '',
+    fullName: user?.fullName ?? "",
+    phone: user?.phone ?? "",
+    address: user?.address ?? "",
   });
+
+  useEffect(() => {
+  if (!user) return;
+
+  setFormData((prev) => ({
+    ...prev,
+    fullName: user.fullName ?? "",
+    phone: user.phone ?? "",
+    address: user.address ?? "",
+  }));
+}, [user]);
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,8 +49,10 @@ export const useCheckoutForm = () => {
     setIsSubmitting(true);
 
     try {
-      const orderRequest = checkoutMapper.toPlaceOrderRequest(formData, items);
+      const orderRequest = checkoutMapper.toPlaceOrderRequest(formData, items, paymentMethod);
       const order = await createOrder.mutateAsync(orderRequest);
+
+      console.log("ORDER =", order);
 
       const payment = await createPayment.mutateAsync({
         orderId: order.id,

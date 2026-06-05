@@ -1,5 +1,6 @@
 import type { OrderItem } from '../../Order/types/orderItem';
 import type { OrderStatus } from '../../Order/types/orderStatus';
+import type { PaymentMethod } from '../../Payment/types/paymentMethod';
 
 export interface Order {
   id: number;
@@ -20,7 +21,7 @@ export interface PlaceOrderRequest {
   fullName: string;
   phone: string;
   shippingAddress: string;
-  note?: string;
+  paymentMethod: PaymentMethod;
   items: { productId: number; quantity: number; variantId?: number }[];
 }
 

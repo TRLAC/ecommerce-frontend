@@ -3,7 +3,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { CheckoutLayout } from '../components/CheckoutLayout';
-import { ShippingForm } from '../components/ShippingForm';
+import { ShippingInfo } from '../components/ShippingInfo';
 import { PaymentMethodSelector } from '../components/PaymentMethodSelector';
 import { CheckoutSummary } from '../components/CheckoutSummary';
 import { PlaceOrderButton } from '../components/PlaceOrderButton';
@@ -55,7 +55,7 @@ export const CheckoutPage: React.FC = () => {
                 Đã xảy ra lỗi khi đặt hàng. Vui lòng thử lại.
               </div>
             )}
-            <ShippingForm
+            <ShippingInfo
               formData={formData}
               errors={errors}
               onChange={handleChange}
