@@ -3,10 +3,7 @@ export interface ProductResponse {
   name: string;
   price: number;
   stockQuantity: number;
-  status:
-    | "ACTIVE"
-    | "OUT_OF_STOCK"
-    | "INACTIVE";
+  status: "ACTIVE"
   ram?: number;
   storage?: number;
   battery?: number;

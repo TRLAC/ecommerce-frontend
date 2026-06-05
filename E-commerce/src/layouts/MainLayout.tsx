@@ -2,6 +2,7 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/store";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useCart } from "@/features/Cart/hooks/useCart";
 
 export default function UserLayout() {
   const user = useAuthStore((state) => state.user);
@@ -13,6 +14,7 @@ export default function UserLayout() {
   const searchRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const { totalItems } = useCart();
 
   const handleSearch = () => {
 
@@ -114,9 +116,6 @@ export default function UserLayout() {
             <Link className="hidden lg:block text-sm text-slate-600 hover:text-violet-600 px-3 py-1 transition" to="/categories">
               Danh mục
             </Link>
-            <Link className="hidden lg:block text-sm text-slate-600 hover:text-violet-600 px-3 py-1 transition" to="/deals">
-              Khuyến mãi
-            </Link>
 
             {/* Wishlist */}
             <Link to="/wishlist" className="relative rounded-full p-2 hover:bg-slate-100 transition">
@@ -127,7 +126,11 @@ export default function UserLayout() {
             {/* Cart */}
             <Link to="/cart" className="relative rounded-full p-2 hover:bg-slate-100 transition">
               🛒
-              <span className="absolute right-1 top-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">5</span>
+              {totalItems > 0 && (
+                <span className="absolute right-1 top-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">
+                  {totalItems > 99 ? "99+" : totalItems}
+                </span>
+              )}
             </Link>
 
             {/* User dropdown */}

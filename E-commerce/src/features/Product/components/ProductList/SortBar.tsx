@@ -2,8 +2,8 @@
 // features/product/components/SortBar.tsx
 // ============================================================
 
-import type { SortOption, ViewMode } from "../types";
-import { SORT_OPTIONS } from "../types";
+import type { SortOption, ViewMode } from "../../types";
+import { SORT_OPTIONS } from "../../types";
 
 // ─── Props ────────────────────────────────────────────────────
 

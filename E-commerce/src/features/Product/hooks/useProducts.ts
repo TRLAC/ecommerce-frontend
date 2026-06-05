@@ -151,21 +151,5 @@ const fetchProducts = useCallback(async () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  return {
-    products,
-    totalElements,
-    totalPages,
-    currentPage,
-    isLoading,
-    isError,
-    errorMessage,
-    filter,
-    sort,
-    setFilter,
-    updateFilter,
-    resetFilter,
-    setSort,
-    setPage,
-    refetch: fetchProducts,
-  };
+  return { products, totalElements, totalPages, currentPage, isLoading, isError, errorMessage, filter, sort, setFilter, updateFilter, resetFilter, setSort, setPage, refetch: fetchProducts,};
 }

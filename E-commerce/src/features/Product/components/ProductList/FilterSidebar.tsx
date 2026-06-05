@@ -1,6 +1,6 @@
   import { useState, useCallback } from "react";
   import type { ReactNode } from "react";
-  import type { ProductFilter } from "../types";
+  import type { ProductFilter } from "../../types";
 
   interface FilterSidebarProps {
     filter: ProductFilter;

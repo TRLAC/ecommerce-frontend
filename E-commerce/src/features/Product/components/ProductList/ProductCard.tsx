@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import type { ProductResponse } from "../types";
+import type { ProductResponse } from "../../types";
 
 // ─── Helpers ─────────────────────────────────────────────────
 
