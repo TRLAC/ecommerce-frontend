@@ -1,4 +1,4 @@
-  import { useState, useCallback } from "react";
+  import { useState } from "react";
   import type { ReactNode } from "react";
   import type { ProductFilter } from "../../types";
 
@@ -15,7 +15,7 @@
   const STORAGE_OPTIONS = [64, 128, 256, 512, 1024];
 
   const MIN_PRICE = 0;
-  const MAX_PRICE = 2_000_000;
+  const MAX_PRICE = 200_000_000;
 
 
   function FilterSection({
@@ -50,6 +50,43 @@
 
         {open && <div className="mt-3 space-y-1">{children}</div>}
       </div>
+    );
+  }
+
+
+  function PriceInput({
+    value,
+    placeholder,
+    label,
+    onCommit,
+  }: {
+    value: number | undefined;
+    placeholder: string;
+    label: string;
+    onCommit: (v: number | undefined) => void;
+  }) {
+    const [draft, setDraft] = useState<string | null>(null);
+    const shown = draft ?? (value != null ? value.toLocaleString("vi-VN") : "");
+
+    const commit = () => {
+      if (draft == null) return;
+      const n = parseInt(draft.replace(/\D/g, ""), 10);
+      onCommit(Number.isNaN(n) ? undefined : n);
+      setDraft(null);
+    };
+
+    return (
+      <input
+        type="text"
+        inputMode="numeric"
+        className="flex-1 min-w-0 w-0 h-8 px-2 text-center text-xs border border-slate-200 rounded-lg bg-slate-50 text-slate-700 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-100 transition"
+        value={shown}
+        placeholder={placeholder}
+        aria-label={label}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => e.key === "Enter" && commit()}
+      />
     );
   }
 
@@ -106,42 +143,9 @@
     const [showAllBrands, setShowAllBrands] = useState(false);
     const visibleBrands = showAllBrands ? brands : brands.slice(0, 4);
 
-  const toggleArrayFilter = useCallback(
-  (
-    key:
-      | "brand"
-      | "ram"
-      | "storage",
-    value: string | number,
-    checked: boolean
-  ) => {
-
-    const current =
-      (filter[key] as
-        (string | number)[]) ?? [];
-
-    const next = checked
-      ? [...current, value]
-      : current.filter(
-          (v) => v !== value
-        );
-
-    onChange({
-      [key]:
-        next.length
-          ? next
-          : undefined,
-        });
-  },[filter, onChange]);
-
-    // Price input blur — clamp & validate
-    const handlePriceBlur = (
-      field: "minPrice" | "maxPrice",
-      raw: string
-    ) => {
-      const parsed = parseInt(raw.replace(/\D/g, ""), 10);
-      if (isNaN(parsed)) return;
-      const clamped = Math.min(Math.max(parsed, MIN_PRICE), MAX_PRICE);
+    const handlePriceCommit = (field: "minPrice" | "maxPrice", v: number | undefined) => {
+      if (v == null) return onChange({ [field]: undefined });
+      const clamped = Math.min(Math.max(v, MIN_PRICE), MAX_PRICE);
       if (field === "minPrice" && filter.maxPrice != null && clamped > filter.maxPrice) return;
       if (field === "maxPrice" && filter.minPrice != null && clamped < filter.minPrice) return;
       onChange({ [field]: clamped });
@@ -150,13 +154,12 @@
     // Active filter count for badge
     const activeCount = [
     ...(filter.categoryId != null ? [filter.categoryId] : []),
-    ...(filter.brand ?? []),
-    ...(filter.ram ?? []),
-    ...(filter.storage ?? []),
+      filter.brandId,
+      filter.ram,
+      filter.storage,
       filter.minPrice,
-    filter.maxPrice,
-    filter.inStock,
-    ].filter(Boolean).length;
+      filter.maxPrice,
+    ].filter((v) => v != null).length;
 
     return (
       <aside className={`bg-white rounded-2xl border border-slate-100 shadow-sm ${className}`}>
@@ -193,10 +196,7 @@
                 key={cat.categoryId}
                 label={cat.categoryName}
                 checked={filter.categoryId === cat.categoryId}
-                onChange={(checked) => onChange({
-                  categoryId:   checked ? cat.categoryId   : undefined,
-                  categoryName: checked ? cat.categoryName : undefined,
-                })}
+                onChange={(checked) => onChange({ categoryId: checked ? cat.categoryId : undefined })}
               />
             ))}
           </FilterSection>
@@ -204,40 +204,28 @@
           {/* Price */}
           <FilterSection title="Khoảng giá">
             <div className="flex items-center gap-2 mb-3">
-              <input
-                type="text"
-              className="flex-1 min-w-0 w-0 h-8 px-2 text-center text-xs border border-slate-200 rounded-lg bg-slate-50 text-slate-700 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-100 transition"
-                value={filter.minPrice != null ? filter.minPrice.toLocaleString("vi-VN") : ""}
+              <PriceInput
+                value={filter.minPrice}
                 placeholder="Từ"
-                onChange={(e) => {
-                  const v = parseInt(e.target.value.replace(/\D/g, ""), 10);
-                  onChange({ minPrice: isNaN(v) ? undefined : v });
-                }}
-                onBlur={(e) => handlePriceBlur("minPrice", e.target.value)}
-                aria-label="Giá tối thiểu"
+                label="Giá tối thiểu"
+                onCommit={(v) => handlePriceCommit("minPrice", v)}
               />
               <span className="text-slate-400 text-xs">–</span>
-              <input
-                type="text"
-                className="flex-1 min-w-0 w-0 h-8 px-2 text-center text-xs border border-slate-200 rounded-lg bg-slate-50 text-slate-700 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-100 transition"
-                value={filter.maxPrice != null ? filter.maxPrice.toLocaleString("vi-VN") : ""}
+              <PriceInput
+                value={filter.maxPrice}
                 placeholder="Đến"
-                onChange={(e) => {
-                  const v = parseInt(e.target.value.replace(/\D/g, ""), 10);
-                  onChange({ maxPrice: isNaN(v) ? undefined : v });
-                }}
-                onBlur={(e) => handlePriceBlur("maxPrice", e.target.value)}
-                aria-label="Giá tối đa"
+                label="Giá tối đa"
+                onCommit={(v) => handlePriceCommit("maxPrice", v)}
               />
             </div>
 
             {/* Quick price presets */}
             <div className="flex flex-wrap gap-1.5">
               {[
-                { label: "Dưới 200k",    min: undefined,  max: 200_000 },
-                { label: "200k – 500k",  min: 200_000,    max: 500_000 },
-                { label: "500k – 1tr",   min: 500_000,    max: 1_000_000 },
-                { label: "Trên 1tr",     min: 1_000_000,  max: undefined },
+                { label: "Dưới 5tr",   min: undefined,  max: 5_000_000 },
+                { label: "5 – 10tr",   min: 5_000_000,  max: 10_000_000 },
+                { label: "10 – 20tr",  min: 10_000_000, max: 20_000_000 },
+                { label: "Trên 20tr",  min: 20_000_000, max: undefined },
               ].map((preset) => {
                 const active =
                   filter.minPrice === preset.min && filter.maxPrice === preset.max;
@@ -270,11 +258,8 @@
               <CheckOption
                 key={brand.brandId}
                 label={brand.brandName}
-                checked={filter.brandId === brand.brandId}       // ← đổi
-                onChange={(checked) => onChange({
-                  brandId:   checked ? brand.brandId   : undefined,  // ← đổi
-                  brandName: checked ? brand.brandName : undefined,  // ← đổi
-                })}
+                checked={filter.brandId === brand.brandId}
+                onChange={(checked) => onChange({ brandId: checked ? brand.brandId : undefined })}
               />
             ))}
 
@@ -303,17 +288,8 @@
               <CheckOption
                 key={ram}
                 label={`${ram} GB`}
-                checked={
-                  (filter.ram ?? [])
-                    .includes(ram)
-                }
-                onChange={(checked) =>
-                  toggleArrayFilter(
-                    "ram",
-                    ram,
-                    checked
-                  )
-                }
+                checked={filter.ram === ram}
+                onChange={(checked) => onChange({ ram: checked ? ram : undefined })}
               />
 
             ))}
@@ -329,40 +305,16 @@
               <CheckOption
                 key={storage}
                 label={`${storage} GB`}
-                checked={
-                  (filter.storage ?? [])
-                    .includes(storage)
-                }
-                onChange={(checked) =>
-                  toggleArrayFilter(
-                    "storage",
-                    storage,
-                    checked
-                  )
-                }
+                checked={filter.storage === storage}
+                onChange={(checked) => onChange({ storage: checked ? storage : undefined })}
               />
 
             ))}
 
           </FilterSection>
 
-          {/* Status */}
-          <FilterSection title="Tình trạng" defaultOpen={false}>
-            <CheckOption
-              label="Còn hàng"
-              checked={filter.inStock === true}
-              onChange={(c) => onChange({ inStock: c || undefined })}
-            />
-          </FilterSection>
-
         </div>
 
-        {/* Apply button — mobile convenience */}
-        <div className="px-5 py-4 lg:hidden">
-          <button className="w-full h-10 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-xl transition-colors">
-            Áp dụng bộ lọc
-          </button>
-        </div>
       </aside>
     );
   }

@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cartApi } from "../api/cartApi";
 import type { CreateCartRequest } from "../types";
 import { useAuthStore } from "@/features/auth/store";
+import { toast } from "@/shared/lib/toast";
+import { getErrorMessage } from "@/shared/utils/apiError";
 
 export const CART_QUERY_KEY = ["cart"] as const;
 
@@ -42,7 +44,10 @@ export function useUpdateCartItem() {
     mutationFn: ({ cartItemId, quantity }: { cartItemId: number; quantity: number }) =>
       cartApi.updateItem(cartItemId, { quantity }),
     onSuccess: (data) => qc.setQueryData(CART_QUERY_KEY, data),
-    onError: () => qc.invalidateQueries({ queryKey: CART_QUERY_KEY }),
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Không cập nhật được số lượng"));
+      qc.invalidateQueries({ queryKey: CART_QUERY_KEY });
+    },
   });
 }
 
@@ -50,7 +55,11 @@ export function useRemoveCartItem() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (cartItemId: number) => cartApi.removeItem(cartItemId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: CART_QUERY_KEY }),
+    onSuccess: () => {
+      toast.success("Đã xóa sản phẩm khỏi giỏ");
+      qc.invalidateQueries({ queryKey: CART_QUERY_KEY });
+    },
+    onError: (err) => toast.error(getErrorMessage(err, "Không xóa được sản phẩm")),
   });
 }
 
@@ -58,11 +67,10 @@ export function useClearCart() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: cartApi.clearCart,
-    onSuccess: () =>
-      qc.setQueryData(CART_QUERY_KEY, {
-        cartItems: [],
-        totalItems: 0,
-        totalAmount: 0,
-      }),
+    onSuccess: () => {
+      toast.success("Đã xóa toàn bộ giỏ hàng");
+      qc.invalidateQueries({ queryKey: CART_QUERY_KEY });
+    },
+    onError: (err) => toast.error(getErrorMessage(err, "Không xóa được giỏ hàng")),
   });
 }

@@ -1,25 +1,34 @@
 import { apiClient } from "@/shared/api/apiClient";
-import type { ProductResponse, PageResponse, ProductQueryParams } from "../types";
-
-// ─── Endpoints ───────────────────────────────────────────────
-
-const PRODUCT_API = {
-  GET_ALL:    "/products",
-  GET_BY_ID:  (id: number) => `/products/${id}`,
-};
-
-// ─── API ─────────────────────────────────────────────────────
+import { normalizePage } from "@/shared/utils/page";
+import type { PageResponse, RawPage } from "@/shared/types/page";
+import type {
+  BrandResponse,
+  CategoryResponse,
+  ProductQueryParams,
+  ProductResponse,
+} from "../types";
 
 export const productApi = {
-
-  getAll: async (params: ProductQueryParams, signal?: AbortSignal): Promise<PageResponse<ProductResponse>> => {
-    const res = await apiClient.get(PRODUCT_API.GET_ALL, { params, signal });
-    return res.data;
+  getAll: async (
+    params: ProductQueryParams,
+    signal?: AbortSignal
+  ): Promise<PageResponse<ProductResponse>> => {
+    const res = await apiClient.get<RawPage<ProductResponse>>("/products", { params, signal });
+    return normalizePage(res.data);
   },
 
   getById: async (id: number, signal?: AbortSignal): Promise<ProductResponse> => {
-    const res = await apiClient.get(PRODUCT_API.GET_BY_ID(id), { signal });
+    const res = await apiClient.get<ProductResponse>(`/products/${id}`, { signal });
     return res.data;
   },
 
+  getBrands: async (): Promise<BrandResponse[]> => {
+    const res = await apiClient.get<BrandResponse[]>("/brands");
+    return res.data;
+  },
+
+  getRootCategories: async (): Promise<CategoryResponse[]> => {
+    const res = await apiClient.get<CategoryResponse[]>("/categories/roots");
+    return res.data;
+  },
 };

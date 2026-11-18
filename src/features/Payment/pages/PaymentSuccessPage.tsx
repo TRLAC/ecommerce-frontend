@@ -1,25 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useConfirmPayment } from '../hooks/useConfirmPayment';
 
-/**
- * PaymentSuccessPage
- * Called after VNPay / MoMo redirect back with ?orderId=&transactionId=
- * Confirms payment automatically then shows success UI.
- */
+/** Hiển thị kết quả sau khi xác nhận ở cổng giả lập (việc confirm đã làm ở PaymentGatewayPage). */
 export const PaymentSuccessPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const orderId = Number(searchParams.get('orderId'));
-  const transactionId = searchParams.get('transactionId') ?? '';
-
-  const confirmPayment = useConfirmPayment();
-
-  useEffect(() => {
-    if (orderId && transactionId) {
-      confirmPayment.mutate({ orderId, transactionId, status: 'SUCCESS' });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center">
@@ -29,27 +14,23 @@ export const PaymentSuccessPage: React.FC = () => {
         </div>
       </div>
 
-      <h1 className="mb-2 text-2xl font-bold text-slate-800">
-        Thanh toán thành công!
-      </h1>
+      <h1 className="mb-2 text-2xl font-bold text-slate-800">Thanh toán thành công!</h1>
       <p className="mb-8 text-sm text-slate-500">
-        Giao dịch của bạn đã được xác nhận. Đơn hàng sẽ được xử lý ngay.
+        Giao dịch đã được xác nhận. Đơn hàng sẽ được xử lý ngay.
       </p>
 
       <div className="flex flex-col gap-3">
         {orderId ? (
           <Link
             to={`/orders/${orderId}`}
-            className="flex w-full items-center justify-center rounded-xl bg-violet-600 px-6 py-3.5
-              text-sm font-semibold text-white shadow-md shadow-violet-200 transition hover:bg-violet-700"
+            className="flex w-full items-center justify-center rounded-xl bg-violet-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-violet-200 transition hover:bg-violet-700"
           >
-            Xem đơn hàng
+            Xem đơn hàng #{orderId}
           </Link>
         ) : null}
         <Link
           to="/"
-          className="flex w-full items-center justify-center rounded-xl border border-slate-200 px-6 py-3
-            text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+          className="flex w-full items-center justify-center rounded-xl border border-slate-200 px-6 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
         >
           ← Tiếp tục mua sắm
         </Link>

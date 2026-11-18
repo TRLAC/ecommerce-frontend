@@ -14,7 +14,12 @@ export const authApi = {
     return res.data;
   },
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    const res = await apiClient.post(AUTH_API.REGISTER, data);
+    // BE (RegisterRequest) dùng field `fullname` chứ không phải `fullName`
+    const res = await apiClient.post(AUTH_API.REGISTER, {
+      fullname: data.fullName,
+      email: data.email,
+      password: data.password,
+    });
     return res.data;
   },
   refresh: async (): Promise<AuthResponse> => {

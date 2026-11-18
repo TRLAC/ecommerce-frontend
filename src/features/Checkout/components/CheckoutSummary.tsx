@@ -1,3 +1,4 @@
+import { formatVND } from '@/shared/utils/format';
 // features/Checkout/components/CheckoutSummary.tsx
 
 import React from 'react';
@@ -13,19 +14,14 @@ interface SummaryItem {
 interface Props {
   items: SummaryItem[];
   totalAmount: number;
-  shippingFee?: number;
 }
 
-const formatVND = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 
 export const CheckoutSummary: React.FC<Props> = ({
   items,
   totalAmount,
-  shippingFee = 0,
 }) => {
   const totalQuantity = items.reduce((s, i) => s + i.quantity, 0);
-  const isFreeShipping = totalAmount >= 500_000;
-  const finalFee = isFreeShipping ? 0 : shippingFee;
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
@@ -73,23 +69,13 @@ export const CheckoutSummary: React.FC<Props> = ({
 
         <div className="flex items-center justify-between text-sm">
           <span className="text-slate-500">Phí vận chuyển</span>
-          {isFreeShipping ? (
-            <span className="font-medium text-emerald-500">Miễn phí</span>
-          ) : (
-            <span className="text-slate-700">{formatVND(shippingFee)}</span>
-          )}
+          <span className="font-medium text-emerald-500">Miễn phí</span>
         </div>
-
-        {isFreeShipping && (
-          <div className="rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-600">
-            🎉 Miễn phí ship cho đơn từ 500.000đ
-          </div>
-        )}
 
         <div className="flex items-center justify-between pt-3 border-t border-slate-100">
           <span className="font-semibold text-slate-800">Tổng cộng</span>
           <span className="text-lg font-bold text-violet-600">
-            {formatVND(totalAmount + finalFee)}
+            {formatVND(totalAmount)}
           </span>
         </div>
       </div>

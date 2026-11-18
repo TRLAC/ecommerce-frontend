@@ -1,68 +1,60 @@
+// Khớp BE: ProductResponse + ProductFilter (dto/filter/ProductFilter.java)
+
+export type ProductStatus = "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK" | "DISCONTINUED";
+
 export interface ProductResponse {
   productId: number;
   name: string;
   price: number;
   stockQuantity: number;
-  status: "ACTIVE"
-  ram?: number;
-  storage?: number;
-  battery?: number;
-  screenSize?: number;
+  status: ProductStatus;
+  ram?: number | null;
+  storage?: number | null;
+  battery?: number | null;
+  screenSize?: number | null;
   images: string[];
-  brandId: number; 
+  brandId: number;
   brandName: string;
-  categoryId: number; 
+  categoryId: number;
   categoryName: string;
-  createdAt: string;
 }
 
-// Spring Page wrapper
-export interface PageResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  number: number;       // current page (0-indexed)
-  size: number;
-  first: boolean;
-  last: boolean;
+export interface BrandResponse {
+  brandId: number;
+  brandName: string;
 }
 
-// ─── Filter ──────────────────────────────────────────────────
+export interface CategoryResponse {
+  categoryId: number;
+  categoryName: string;
+}
+
+// ─── Filter (chỉ gửi những gì BE hỗ trợ) ─────────────────────
 
 export interface ProductFilter {
   keyword?: string;
   categoryId?: number;
-  categoryName?: string; 
   brandId?: number;
-  brandName?: string;    
-  brand?: string[];    
   minPrice?: number;
   maxPrice?: number;
-  inStock?: boolean;
-  ram?: number[];
-  storage?: number[];
-  status?: string;
+  ram?: number;
+  storage?: number;
 }
 
 // ─── Sort ────────────────────────────────────────────────────
 
-export type SortOption =
-  | "newest"
-  | "price_asc"
-  | "price_desc";
+export type SortOption = "newest" | "price_asc" | "price_desc";
 
 export const SORT_OPTIONS: { label: string; value: SortOption; springSort: string }[] = [
-  { label: "Mới nhất",   value: "newest",     springSort: "createdAt,desc" },
-  { label: "Giá thấp ↑", value: "price_asc",  springSort: "price,asc" },
-  { label: "Giá cao ↓",  value: "price_desc", springSort: "price,desc" },
+  { label: "Mới nhất", value: "newest", springSort: "createdAt,desc" },
+  { label: "Giá thấp ↑", value: "price_asc", springSort: "price,asc" },
+  { label: "Giá cao ↓", value: "price_desc", springSort: "price,desc" },
 ];
 
 export type ViewMode = "grid" | "list";
 
-// ─── Query Params (sent to Spring) ───────────────────────────
-
 export interface ProductQueryParams extends ProductFilter {
-  page: number;         // 0-indexed (Spring default)
+  page: number; // 0-indexed
   size: number;
-  sort: string; 
+  sort: string;
 }

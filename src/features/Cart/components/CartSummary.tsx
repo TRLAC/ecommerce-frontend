@@ -1,7 +1,8 @@
-// features/Cart/components/CartSummary.tsx
-
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useClearCart } from "../hooks/useCart";
+import { formatVND } from "@/shared/utils/format";
 
 interface Props {
   totalItems: number;
@@ -11,71 +12,44 @@ interface Props {
 export default function CartSummary({ totalItems, totalPrice }: Props) {
   const navigate = useNavigate();
   const { mutate: clearCart, isPending } = useClearCart();
-
-  const shipping = totalPrice >= 500_000 ? 0 : 30_000;
-  const grandTotal = totalPrice + shipping;
+  const [confirmClear, setConfirmClear] = useState(false);
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-6 space-y-4 sticky top-[88px]">
+    <div className="sticky top-[88px] space-y-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
       <h2 className="text-base font-bold text-slate-800">Tóm tắt đơn hàng</h2>
 
-      {/* Lines */}
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between text-slate-500">
-          <span>Sản phẩm ({totalItems})</span>
-          <span className="text-slate-700 font-medium">{totalPrice.toLocaleString("vi-VN")}₫</span>
-        </div>
-        <div className="flex justify-between text-slate-500">
-          <span>Phí vận chuyển</span>
-          {shipping === 0 ? (
-            <span className="text-emerald-500 font-medium">Miễn phí</span>
-          ) : (
-            <span className="text-slate-700 font-medium">{shipping.toLocaleString("vi-VN")}₫</span>
-          )}
-        </div>
-        {shipping === 0 && (
-          <p className="text-xs text-emerald-500 bg-emerald-50 rounded-lg px-3 py-2">
-            🎉 Miễn phí ship cho đơn từ 500.000₫
-          </p>
-        )}
-        {shipping > 0 && (
-          <p className="text-xs text-slate-400 bg-slate-50 rounded-lg px-3 py-2">
-            Mua thêm{" "}
-            <span className="font-semibold text-violet-600">
-              {(500_000 - totalPrice).toLocaleString("vi-VN")}₫
-            </span>{" "}
-            để được miễn phí ship
-          </p>
-        )}
+      <div className="flex justify-between text-sm text-slate-500">
+        <span>Tạm tính ({totalItems} sản phẩm)</span>
+        <span className="font-medium text-slate-700">{formatVND(totalPrice)}</span>
       </div>
+      <p className="text-xs text-slate-400">Chưa tính phí vận chuyển (hiện chưa áp dụng).</p>
 
-      <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
+      <div className="flex items-center justify-between border-t border-slate-100 pt-4">
         <span className="text-sm font-semibold text-slate-700">Tổng cộng</span>
-        <span className="text-lg font-bold text-violet-600">{grandTotal.toLocaleString("vi-VN")}₫</span>
+        <span className="text-xl font-bold text-violet-600">{formatVND(totalPrice)}</span>
       </div>
 
-      {/* CTA */}
       <button
         onClick={() => navigate("/checkout")}
-        className="w-full rounded-xl bg-violet-600 py-3 text-sm font-semibold text-white hover:bg-violet-700 active:scale-95 transition-all"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 active:scale-[0.98]"
       >
-        Tiến hành thanh toán →
+        Tiến hành thanh toán <ArrowRight size={16} />
       </button>
 
       <button
         onClick={() => navigate("/")}
-        className="w-full rounded-xl border border-slate-200 py-2.5 text-sm text-slate-500 hover:bg-slate-50 transition"
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-sm text-slate-500 transition hover:bg-slate-50"
       >
-        ← Tiếp tục mua sắm
+        <ArrowLeft size={16} /> Tiếp tục mua sắm
       </button>
 
-      {/* Clear cart */}
       <button
-        onClick={() => clearCart()}
+        onClick={() => (confirmClear ? clearCart() : setConfirmClear(true))}
+        onBlur={() => setConfirmClear(false)}
         disabled={isPending}
-        className="w-full text-xs text-slate-300 hover:text-red-400 transition pt-1"
+        className={`w-full pt-1 text-xs transition ${confirmClear ? "text-red-500" : "text-slate-400 hover:text-red-400"}`}
       >
-        {isPending ? "Đang xóa..." : "Xóa toàn bộ giỏ hàng"}
+        {isPending ? "Đang xóa..." : confirmClear ? "Nhấn lần nữa để xóa toàn bộ" : "Xóa toàn bộ giỏ hàng"}
       </button>
     </div>
   );

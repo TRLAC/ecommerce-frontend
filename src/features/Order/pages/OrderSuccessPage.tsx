@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useOrder } from '../hooks/useOrder';
+import { formatVND } from '@/shared/utils/format';
 
-const formatVND = (amount: number) => amount.toLocaleString('vi-VN') + 'đ';
 
 export const OrderSuccessPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,12 +34,12 @@ export const OrderSuccessPage: React.FC = () => {
         <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm text-left mb-6">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm text-slate-500">Mã đơn hàng</span>
-            <span className="text-sm font-bold text-violet-600">#{order.id}</span>
+            <span className="text-sm font-bold text-violet-600">#{order.orderId}</span>
           </div>
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm text-slate-500">Địa chỉ giao hàng</span>
             <span className="text-sm font-medium text-slate-700 text-right max-w-48">
-              {order.shippingAddress}
+              {order.shipping?.address}
             </span>
           </div>
           <div className="flex items-center justify-between pt-3 border-t border-slate-100">

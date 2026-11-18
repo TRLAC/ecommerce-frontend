@@ -1,6 +1,7 @@
 // features/Cart/pages/CartPage.tsx
 
 import { Link } from "react-router-dom";
+import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/features/Cart/hooks/useCart"; 
 import CartItem from "../components/CartItem";
 import CartSummary from "../components/CartSummary";
@@ -23,7 +24,9 @@ function CartItemSkeleton() {
 function EmptyCart() {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="text-6xl mb-4">🛒</div>
+      <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-violet-50 text-violet-400">
+        <ShoppingCart size={36} />
+      </div>
       <h2 className="text-lg font-bold text-slate-700 mb-2">Giỏ hàng trống</h2>
       <p className="text-sm text-slate-400 mb-6">Hãy thêm sản phẩm vào giỏ hàng của bạn</p>
       <Link
@@ -41,7 +44,7 @@ export default function CartPage() {
   const { items, totalItems, totalPrice, isLoading, isError } = useCart();
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div>
       {/* Header */}
       <div className="bg-white border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">

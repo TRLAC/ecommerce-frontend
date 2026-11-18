@@ -1,91 +1,50 @@
 import { useMemo } from "react";
-import type { ProductFilter } from "../types";
+import type { BrandResponse, CategoryResponse, ProductFilter } from "../types";
+import { formatVND } from "@/shared/utils/format";
 
 export function useActiveFilterChips(
   filter: ProductFilter,
-  onChange: (partial: Partial<ProductFilter>) => void
+  onChange: (partial: Partial<ProductFilter>) => void,
+  brands: BrandResponse[] = [],
+  categories: CategoryResponse[] = []
 ) {
   return useMemo(() => {
-    const chips: {
-      id: string;
-      label: string;
-      onRemove: () => void;
-    }[] = [];
+    const chips: { id: string; label: string; onRemove: () => void }[] = [];
 
-    if (filter.categoryId) {
+    if (filter.keyword) {
+      chips.push({ id: "keyword", label: `"${filter.keyword}"`, onRemove: () => onChange({ keyword: undefined }) });
+    }
+    if (filter.categoryId != null) {
+      const c = categories.find((x) => x.categoryId === filter.categoryId);
       chips.push({
-        id: `category-${filter.categoryId}`,
-        label: filter.categoryName ?? `Category #${filter.categoryId}`,
-        onRemove: () =>
-          onChange({
-            categoryId: undefined,
-            categoryName: undefined,
-          }),
+        id: "category",
+        label: c?.categoryName ?? `Danh mục #${filter.categoryId}`,
+        onRemove: () => onChange({ categoryId: undefined }),
       });
     }
-
-    if (filter.brandId) {
+    if (filter.brandId != null) {
+      const b = brands.find((x) => x.brandId === filter.brandId);
       chips.push({
-        id: `brand-${filter.brandId}`,
-        label: filter.brandName ?? `Brand #${filter.brandId}`,
-        onRemove: () =>
-          onChange({
-            brandId: undefined,
-            brandName: undefined,
-          }),
+        id: "brand",
+        label: b?.brandName ?? `Thương hiệu #${filter.brandId}`,
+        onRemove: () => onChange({ brandId: undefined }),
       });
     }
-
-    (filter.brand ?? []).forEach((b) => {
-      chips.push({
-        id: `brand-${b}`,
-        label: b,
-        onRemove: () =>
-          onChange({
-            brand: filter.brand?.filter((v) => v !== b),
-          }),
-      });
-    });
-
     if (filter.minPrice != null || filter.maxPrice != null) {
+      const from = filter.minPrice != null ? formatVND(filter.minPrice) : "0₫";
+      const to = filter.maxPrice != null ? formatVND(filter.maxPrice) : "trở lên";
       chips.push({
         id: "price",
-        label: `${filter.minPrice ?? 0} – ${filter.maxPrice ?? "+"}`,
-        onRemove: () =>
-          onChange({ minPrice: undefined, maxPrice: undefined }),
+        label: `${from} – ${to}`,
+        onRemove: () => onChange({ minPrice: undefined, maxPrice: undefined }),
       });
     }
-
-    if (filter.inStock) {
-      chips.push({
-        id: "stock",
-        label: "Còn hàng",
-        onRemove: () => onChange({ inStock: undefined }),
-      });
+    if (filter.ram != null) {
+      chips.push({ id: "ram", label: `${filter.ram}GB RAM`, onRemove: () => onChange({ ram: undefined }) });
     }
-
-    (filter.ram ?? []).forEach((r) => {
-      chips.push({
-        id: `ram-${r}`,
-        label: `${r}GB RAM`,
-        onRemove: () =>
-          onChange({
-            ram: filter.ram?.filter((v) => v !== r),
-          }),
-      });
-    });
-
-    (filter.storage ?? []).forEach((s) => {
-      chips.push({
-        id: `storage-${s}`,
-        label: `${s}GB`,
-        onRemove: () =>
-          onChange({
-            storage: filter.storage?.filter((v) => v !== s),
-          }),
-      });
-    });
-
+    if (filter.storage != null) {
+      chips.push({ id: "storage", label: `${filter.storage}GB`, onRemove: () => onChange({ storage: undefined }) });
+    }
     return chips;
-  }, [filter, onChange]);
+  }, [filter, onChange, brands, categories]);
 }

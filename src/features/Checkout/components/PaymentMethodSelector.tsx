@@ -3,14 +3,13 @@ import type { PaymentMethod } from '../../Payment/types/paymentMethod';
 import {
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHOD_ICONS,
+  PAYMENT_METHODS,
 } from '../../Payment/types/paymentMethod';
 
 interface Props {
   selected: PaymentMethod;
   onChange: (method: PaymentMethod) => void;
 }
-
-const METHODS: PaymentMethod[] = ['COD', 'VNPAY', 'MOMO', 'BANK_TRANSFER'];
 
 export const PaymentMethodSelector: React.FC<Props> = ({ selected, onChange }) => {
   return (
@@ -20,7 +19,7 @@ export const PaymentMethodSelector: React.FC<Props> = ({ selected, onChange }) =
       </h2>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {METHODS.map((method) => {
+        {PAYMENT_METHODS.map((method) => {
           const isSelected = selected === method;
           return (
             <button
@@ -42,11 +41,9 @@ export const PaymentMethodSelector: React.FC<Props> = ({ selected, onChange }) =
                 >
                   {PAYMENT_METHOD_LABELS[method]}
                 </span>
-                {method === 'COD' && (
-                  <span className="text-xs text-slate-400">
-                    Thanh toán khi nhận hàng
-                  </span>
-                )}
+                <span className="text-xs text-slate-400">
+                  {method === 'COD' ? 'Trả tiền khi nhận hàng' : 'Thanh toán online (giả lập)'}
+                </span>
               </div>
               <div className="ml-auto">
                 <div

@@ -1,30 +1,28 @@
-import type { OrderItem } from '../../Order/types/orderItem';
-import type { OrderStatus } from '../../Order/types/orderStatus';
+import type { OrderItem } from './orderItem';
+import type { OrderStatus } from './orderStatus';
+import type { OrderStatusLog } from './OrderStatusLog';
+import type { Shipping } from './shipping';
+import type { Payment } from '../../Payment/types/payment';
 import type { PaymentMethod } from '../../Payment/types/paymentMethod';
 
+// Khớp OrderResponse của BE
 export interface Order {
-  id: number;
+  orderId: number;
   userId: number;
-  status: OrderStatus;
+  userFullName: string;
+  userEmail: string;
   totalAmount: number;
-  shippingFee: number;
-  note?: string;
-  shippingAddress: string;
-  fullName: string;
-  phone: string;
-  items: OrderItem[];
+  status: OrderStatus;
   createdAt: string;
   updatedAt: string;
+  items: OrderItem[];
+  payments: Payment[];
+  shipping: Shipping | null;
+  statusLogs: OrderStatusLog[];
 }
 
+// Khớp PlaceOrderRequest của BE: không gửi address thì BE dùng địa chỉ trong hồ sơ
 export interface PlaceOrderRequest {
-  fullName: string;
-  phone: string;
-  shippingAddress: string;
   paymentMethod: PaymentMethod;
-  items: { productId: number; quantity: number; variantId?: number }[];
-}
-
-export interface CancelOrderRequest {
-  reason?: string;
+  address?: string;
 }

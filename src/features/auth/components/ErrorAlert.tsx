@@ -1,20 +1,13 @@
-import React from "react";
+import { AlertCircle } from "lucide-react";
 
-type ErrorAlertProps = {
-  message: string;
-  className?: string;
-};
+type ErrorAlertProps = { message: string; className?: string };
 
-export const ErrorAlert: React.FC<ErrorAlertProps> = ({
-  message,
-  className = "",
-}) => {
-  return (
-    <div
-      className={`text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2 ${className}`}
-      role="alert"
-    >
-      {message}
-    </div>
-  );
-};
+export const ErrorAlert = ({ message, className = "" }: ErrorAlertProps) => (
+  <div
+    role="alert"
+    className={`flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600 ${className}`}
+  >
+    <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
+    <span>{message}</span>
+  </div>
+);

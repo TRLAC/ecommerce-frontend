@@ -1,189 +1,184 @@
-import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { ChevronDown, LogOut, Package, Search, Shield, ShoppingCart, User as UserIcon } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store";
-import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useCart } from "@/features/Cart/hooks/useCart";
+import Logo from "@/shared/components/Logo";
 
-export default function UserLayout() {
-  const user = useAuthStore((state) => state.user);
-  const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
+const NAV = [
+  { to: "/", label: "Trang chủ", end: true },
+  { to: "/orders", label: "Đơn hàng", end: false },
+];
+
+const navLinkCls = ({ isActive }: { isActive: boolean }) =>
+  `whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${
+    isActive ? "bg-violet-50 text-violet-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+  }`;
+
+export default function MainLayout() {
+  const user = useAuthStore((s) => s.user);
   const { logout } = useAuth();
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const { totalItems } = useCart();
   const location = useLocation();
   const navigate = useNavigate();
-  const { totalItems } = useCart();
+  const [params] = useSearchParams();
 
-  const handleSearch = () => {
+  const [open, setOpen] = useState(false);
+  const [keyword, setKeyword] = useState(params.get("keyword") ?? "");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const keyword = searchQuery.trim();
+  const isAdmin = user?.roles.includes("ROLE_ADMIN") ?? false;
+  const isGuest = !user;
 
-    if (!keyword) return;
-
-    navigate(
-      `/?keyword=${encodeURIComponent(keyword)}`
-    );
-
-    setShowSuggestions(false);
-
-  };
+  useEffect(() => setOpen(false), [location.pathname]);
 
   useEffect(() => {
-    setOpen(false);
-    setShowSuggestions(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
+    const onClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
+  const handleSearch = (e: FormEvent) => {
+    e.preventDefault();
+    const q = keyword.trim();
+    navigate(q ? `/?keyword=${encodeURIComponent(q)}` : "/");
+  };
+
+  const searchBox = (
+    <form onSubmit={handleSearch} className="relative w-full">
+      <input
+        type="search"
+        value={keyword}
+        onChange={(e) => setKeyword(e.target.value)}
+        placeholder="Tìm kiếm sản phẩm..."
+        className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-4 pr-11 text-sm outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
+      />
+      <button
+        type="submit"
+        aria-label="Tìm kiếm"
+        className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-violet-50 hover:text-violet-600"
+      >
+        <Search size={17} />
+      </button>
+    </form>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
+          <Logo />
 
-      <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-6">
+          <nav className="hidden items-center gap-1 lg:flex">
+            {NAV.filter((n) => !isGuest || n.to === "/").map((n) => (
+              <NavLink key={n.to} to={n.to} end={n.end} className={navLinkCls}>
+                {n.label}
+              </NavLink>
+            ))}
+          </nav>
 
-          {/* LEFT - Logo */}
-          <Link to="/" className="flex items-center gap-3 flex-shrink-0">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-white font-bold">
-              S
-            </div>
-            <h1 className="text-lg font-bold tracking-tight text-slate-900">
-              ShopVN
-            </h1>
-          </Link>
+          <div className="mx-auto hidden w-full max-w-xl md:block">{searchBox}</div>
 
-          {/* CENTER - Search */}
-          <div className="relative flex-1 max-w-xl" ref={searchRef}>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setShowSuggestions(true)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
-              placeholder="Tìm kiếm sản phẩm..."
-              className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 pl-4 pr-10 text-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
-            />
-            <button  onClick={handleSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-violet-600 transition">
-              🔍
-            </button>
-
-            {/* Suggestions dropdown */}
-            {showSuggestions && (
-              <div className="absolute top-full mt-2 w-full rounded-xl border border-slate-200 bg-white shadow-lg z-50 overflow-hidden">
-                <p className="px-4 py-2 text-xs text-slate-400">Tìm kiếm gần đây</p>
-                {["Áo thun nam oversize", "Giày sneaker trắng"].map((item) => (
-                  <button
-                    key={item}
-                    className="flex w-full items-center gap-3 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition"
-                    onClick={() => { setSearchQuery(item); setShowSuggestions(false); }}
-                  >
-                    🕐 {item}
-                  </button>
-                ))}
-                <p className="px-4 py-2 text-xs text-slate-400">Phổ biến</p>
-                {["Tai nghe không dây", "Ốp lưng điện thoại"].map((item) => (
-                  <button
-                    key={item}
-                    className="flex w-full items-center gap-3 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition"
-                    onClick={() => { setSearchQuery(item); setShowSuggestions(false); }}
-                  >
-                    🔥 {item}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-
-            {/* Nav links */}
-            <Link className="hidden lg:block text-sm text-slate-600 hover:text-violet-600 px-3 py-1 transition" to="/">
-              Trang chủ
-            </Link>
-            <Link className="hidden lg:block text-sm text-slate-600 hover:text-violet-600 px-3 py-1 transition" to="/categories">
-              Danh mục
-            </Link>
-
-            {/* Wishlist */}
-            <Link to="/wishlist" className="relative rounded-full p-2 hover:bg-slate-100 transition">
-              ❤️
-              <span className="absolute right-1 top-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">3</span>
-            </Link>
-
-            {/* Cart */}
-            <Link to="/cart" className="relative rounded-full p-2 hover:bg-slate-100 transition">
-              🛒
+          <div className="ml-auto flex items-center gap-1.5 md:ml-0">
+            <Link
+              to="/cart"
+              aria-label="Giỏ hàng"
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 hover:text-violet-600"
+            >
+              <ShoppingCart size={22} />
               {totalItems > 0 && (
-                <span className="absolute right-1 top-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">
+                <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-violet-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
                   {totalItems > 99 ? "99+" : totalItems}
                 </span>
               )}
             </Link>
 
-            {/* User dropdown */}
+            {isGuest ? (
+              <div className="flex items-center gap-1.5">
+                <Link to="/login" className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
+                  Đăng nhập
+                </Link>
+                <Link to="/register" className="rounded-xl bg-violet-600 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-violet-700">
+                  Đăng ký
+                </Link>
+              </div>
+            ) : (
             <div className="relative" ref={dropdownRef}>
               <button
-                onClick={() => setOpen(!open)}
-                className="flex items-center gap-2 rounded-xl p-2 transition hover:bg-slate-100"
+                onClick={() => setOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                className="flex items-center gap-2 rounded-xl py-1.5 pl-1.5 pr-2 transition hover:bg-slate-100"
               >
                 {user?.avatar ? (
                   <img src={user.avatar} alt={user.fullName} className="h-8 w-8 rounded-full object-cover" />
                 ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 text-violet-700 font-semibold text-sm">
-                    {user?.fullName?.charAt(0)}
-                  </div>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 text-sm font-semibold text-violet-700">
+                    {user?.fullName?.charAt(0).toUpperCase()}
+                  </span>
                 )}
-                <span className="hidden md:block text-sm font-medium text-slate-700">
+                <span className="hidden max-w-[120px] truncate text-sm font-medium text-slate-700 sm:block">
                   {user?.fullName?.split(" ").slice(-1)[0]}
                 </span>
+                <ChevronDown size={16} className={`hidden text-slate-400 transition sm:block ${open ? "rotate-180" : ""}`} />
               </button>
 
               {open && (
-                <div className="absolute right-0 mt-3 w-52 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
-                  <Link to="/profile" className="block rounded-xl px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition">
-                    👤 Tài khoản của tôi
-                  </Link>
-                  <Link to="/orders" className="block rounded-xl px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition">
-                    📦 Đơn hàng
-                  </Link>
-                  <Link to="/wishlist" className="block rounded-xl px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition">
-                    ❤️ Yêu thích
-                  </Link>
-                  <Link to="/addresses" className="block rounded-xl px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 transition">
-                    📍 Địa chỉ
-                  </Link>
-                  <div className="my-2 border-t border-slate-200" />
+                <div role="menu" className="absolute right-0 mt-2 w-60 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-200/60">
+                  <div className="px-3 py-2.5">
+                    <p className="truncate text-sm font-semibold text-slate-900">{user?.fullName}</p>
+                    <p className="truncate text-xs text-slate-500">{user?.email}</p>
+                  </div>
+                  <div className="my-1 border-t border-slate-100" />
+                  <MenuLink to="/profile" icon={<UserIcon size={17} />} label="Tài khoản của tôi" />
+                  <MenuLink to="/orders" icon={<Package size={17} />} label="Đơn hàng của tôi" />
+                  {isAdmin && <MenuLink to="/admin" icon={<Shield size={17} />} label="Trang quản trị" />}
+                  <div className="my-1 border-t border-slate-100" />
                   <button
-                    className="w-full rounded-xl px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50 transition"
                     onClick={logout}
+                    role="menuitem"
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-red-500 transition hover:bg-red-50"
                   >
-                    🚪 Đăng xuất
+                    <LogOut size={17} /> Đăng xuất
                   </button>
                 </div>
               )}
             </div>
-
+            )}
           </div>
         </div>
-      </nav>
 
-      <main className="mx-auto max-w-7xl p-6">
+        {/* Search (mobile) */}
+        <div className="px-4 pb-3 md:hidden">{searchBox}</div>
+      </header>
+
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
         <Outlet />
       </main>
 
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:px-6">
+          <Logo />
+          <p>© {new Date().getFullYear()} ShopVN · Demo e-commerce (Spring Boot + React)</p>
+        </div>
+      </footer>
     </div>
+  );
+}
+
+function MenuLink({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link
+      to={to}
+      role="menuitem"
+      className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-violet-50 hover:text-violet-700"
+    >
+      <span className="text-slate-400">{icon}</span>
+      {label}
+    </Link>
   );
 }

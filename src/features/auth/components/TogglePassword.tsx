@@ -1,11 +1,14 @@
 import { Eye, EyeOff } from "lucide-react";
 
-export const TogglePassword = ({ show, onToggle }: { show: boolean; onToggle: () => void }) => (
+type Props = { show: boolean; onToggle: () => void };
+
+export const TogglePassword = ({ show, onToggle }: Props) => (
   <button
     type="button"
     onClick={onToggle}
-    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+    aria-label={show ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
   >
-    {show ? <EyeOff size={16} /> : <Eye size={16} />}
+    {show ? <EyeOff size={18} /> : <Eye size={18} />}
   </button>
 );

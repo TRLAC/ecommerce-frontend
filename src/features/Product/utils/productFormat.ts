@@ -1,18 +1,14 @@
-export function formatPrice(value:number){
- return new Intl.NumberFormat("vi-VN",{
-   style:"currency",
-   currency:"VND",
-   maximumFractionDigits:0
- }).format(value)
+import { formatVND } from "@/shared/utils/format";
+
+// Giữ tên cũ để các component Product không phải sửa import.
+export function formatPrice(value: number): string {
+  return formatVND(value);
 }
 
-export function formatDate(iso:string){
- return new Date(iso).toLocaleDateString(
-   "vi-VN",
-   {
-      day:"numeric",
-      month:"long",
-      year:"numeric"
-   }
- )
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("vi-VN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }

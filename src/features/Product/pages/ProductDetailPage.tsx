@@ -5,9 +5,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useProductDetail } from "../hooks/useProductDetail";
-import { useProducts } from "../hooks/useProducts";
+import { useRelatedProducts } from "../hooks/useProducts";
 import { ProductCardSkeleton } from "../components/ProductList/ProductCard";
-import { useAddToCart } from "@/features/Cart/hooks/useCart";
+import { useAddToCartAction } from "../hooks/useAddToCartAction";
 
 import {
   ProductDetailSkeleton,
@@ -15,7 +15,6 @@ import {
   ImageGallery,
   ProductInfo,
   ProductDescription,
-  ReviewSection,
   RelatedCard,
   MobileStickyBar,
   ZoomModal,
@@ -31,13 +30,7 @@ export default function ProductDetailPage() {
 
   const { product, isLoading, isError, errorMessage, refetch } = useProductDetail(productId);
 
-  // Related products — same category, exclude current
-  const { products: relatedProducts, isLoading: relatedLoading } = useProducts(
-    product ? { categoryId: product.categoryId } : undefined
-  );
-  const related = relatedProducts
-    .filter((p) => p.productId !== productId)
-    .slice(0, 4);
+  const { related, isLoading: relatedLoading } = useRelatedProducts(product?.categoryId, productId);
 
   // ── UI state ──────────────────────────────────────────────
   const [activeImg, setActiveImg] = useState(0);
@@ -46,19 +39,14 @@ export default function ProductDetailPage() {
   const [addedToCart, setAddedToCart] = useState(false);
   const [zoomed, setZoomed] = useState(false);
 
-  const { mutate: addToCart, isPending: addingToCart } = useAddToCart();
+  const { add: addToCart, isPending: addingToCart } = useAddToCartAction();
 
   const handleAddToCart = useCallback(() => {
     if (!product) return;
-    addToCart(
-      { productId: product.productId, quantity: qty },
-      {
-        onSuccess: () => {
-          setAddedToCart(true);
-          setTimeout(() => setAddedToCart(false), 2000);
-        },
-      }
-    );
+    addToCart(product.productId, qty, () => {
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 2000);
+    });
   }, [product, qty, addToCart]);
 
   // Reset state when product changes
@@ -70,16 +58,15 @@ export default function ProductDetailPage() {
 
   const handleBuyNow = useCallback(() => {
     if (!product) return;
-    // TODO: dispatch to cart store, then navigate
-    navigate("/cart");
-  }, [product, navigate]);
+    addToCart(product.productId, qty, () => navigate("/cart"));
+  }, [product, qty, addToCart, navigate]);
 
   // ── Loading ───────────────────────────────────────────────
   if (isLoading) return <ProductDetailSkeleton />;
   if (isError)   return <ErrorState message={errorMessage ?? "Lỗi không xác định"} onRetry={refetch} />;
   if (!product)  return null;
 
-  const isOutOfStock = product.stockQuantity === 0;
+  const isOutOfStock = product.stockQuantity <= 0;
   const images = product.images.length > 0 ? product.images : [null];
 
   // ── Render ────────────────────────────────────────────────
@@ -133,11 +120,6 @@ export default function ProductDetailPage() {
 
       {/* ── Description / Specs Tabs ── */}
      <ProductDescription product={product} />
-
-      {/* ── Reviews ── */}
-      <div className="mb-8">
-        <ReviewSection />
-      </div>
 
       {/* ── Related Products ── */}
        {(relatedLoading || related.length > 0) && (

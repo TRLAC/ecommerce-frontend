@@ -1,73 +1,70 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
+import type { InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/features/auth/store";
 
-export const apiClient = axios.create({
-  baseURL: "http://localhost:8080/api",
-  withCredentials: true,
-});
+// .env: VITE_API_URL=http://localhost:8080/api
+const BASE_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:8080/api";
 
-const refreshClient = axios.create({
-  baseURL: "http://localhost:8080/api",
-  withCredentials: true,
-});
+export const apiClient = axios.create({ baseURL: BASE_URL, withCredentials: true });
+
+// client riêng (không interceptor) để gọi refresh, tránh lặp vô hạn
+const refreshClient = axios.create({ baseURL: BASE_URL, withCredentials: true });
 
 apiClient.interceptors.request.use((config) => {
   const accessToken = useAuthStore.getState().accessToken;
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
+  if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
   return config;
 });
 
+type RetryConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+type Waiter = { resolve: (token: string) => void; reject: (err: unknown) => void };
+
 let isRefreshing = false;
-let queue: Array<{
-  resolve: (token: string) => void;
-  reject: (err: unknown) => void;  // ✅ fix 1: thêm reject
-}> = [];
+let queue: Waiter[] = [];
 
 const processQueue = (error: unknown, token: string | null = null) => {
-  queue.forEach((p) => (error ? p.reject(error) : p.resolve(token!)));
+  queue.forEach((p) => (error || !token ? p.reject(error) : p.resolve(token)));
   queue = [];
 };
 
+// các endpoint auth tự xử lý 401 (sai mật khẩu, hết hạn refresh), không thử refresh lại
+const isAuthUrl = (url?: string) => !!url && /\/auth\/(login|register|refresh|logout)/.test(url);
+
 apiClient.interceptors.response.use(
   (res) => res,
-  async (error) => {
-    const originalRequest = error.config;
+  async (error: AxiosError) => {
+    const original = error.config as RetryConfig | undefined;
 
-    if (error.response?.status !== 401 || originalRequest._retry) {
+    if (!original || error.response?.status !== 401 || original._retry || isAuthUrl(original.url)) {
       return Promise.reject(error);
     }
-
-    originalRequest._retry = true;
+    original._retry = true;
 
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         queue.push({
           resolve: (token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(apiClient(originalRequest));
+            original.headers.Authorization = `Bearer ${token}`;
+            resolve(apiClient(original));
           },
-          reject,  // ✅ fix 1: reject được gọi khi refresh thất bại
+          reject,
         });
       });
     }
 
     isRefreshing = true;
-
     try {
       const res = await refreshClient.post("/auth/refresh");
       const { accessToken, user } = res.data;
 
       useAuthStore.getState().setAccessToken(accessToken);
-      useAuthStore.getState().setUser(user);       // ✅ fix 3: sync user
-
+      useAuthStore.getState().setUser(user);
       processQueue(null, accessToken);
 
-      originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-      return apiClient(originalRequest);
+      original.headers.Authorization = `Bearer ${accessToken}`;
+      return apiClient(original);
     } catch (err) {
-      processQueue(err, null);                     // ✅ fix 1: reject toàn bộ queue
+      processQueue(err, null);
       useAuthStore.getState().logout();
       return Promise.reject(err);
     } finally {

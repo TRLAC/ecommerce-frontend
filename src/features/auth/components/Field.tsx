@@ -1,23 +1,24 @@
-import React from "react";
+import type { ReactNode } from "react";
 
 type FieldProps = {
   label: string;
-  children: React.ReactNode;
+  htmlFor?: string;
+  error?: string;
+  hint?: string;
+  children: ReactNode;
   className?: string;
 };
 
-export const Field: React.FC<FieldProps> = ({
-  label,
-  children,
-  className = "",
-}) => {
-  return (
-    <div className={className}>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-
-      {children}
-    </div>
-  );
-};
+export const Field = ({ label, htmlFor, error, hint, children, className = "" }: FieldProps) => (
+  <div className={className}>
+    <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-slate-700">
+      {label}
+    </label>
+    {children}
+    {error ? (
+      <p className="mt-1.5 text-xs text-red-500">{error}</p>
+    ) : hint ? (
+      <p className="mt-1.5 text-xs text-slate-400">{hint}</p>
+    ) : null}
+  </div>
+);

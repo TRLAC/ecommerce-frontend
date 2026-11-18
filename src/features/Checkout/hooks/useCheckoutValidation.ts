@@ -8,14 +8,11 @@ export const useCheckoutValidation = () => {
 
   const validate = (data: CheckoutFormData): boolean => {
     const newErrors: FormErrors = {};
+    const address = data.address.trim();
 
-    if (!data.fullName.trim()) newErrors.fullName = 'Vui lòng nhập họ tên';
-    if (!data.phone.trim()) {
-      newErrors.phone = 'Vui lòng nhập số điện thoại';
-    } else if (!/^(0|\+84)[3-9]\d{8}$/.test(data.phone)) {
-      newErrors.phone = 'Số điện thoại không hợp lệ';
-    }
-    if (!data.address.trim()) newErrors.address = 'Vui lòng nhập địa chỉ';
+    if (!address) newErrors.address = 'Vui lòng nhập địa chỉ giao hàng';
+    else if (address.length > 255) newErrors.address = 'Địa chỉ tối đa 255 ký tự';
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

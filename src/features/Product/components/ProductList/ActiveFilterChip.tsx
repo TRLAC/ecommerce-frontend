@@ -1,16 +1,20 @@
 import { useActiveFilterChips } from "../../hooks/useActiveFilterChips";
-import type { ProductFilter } from "../../types";
+import type { BrandResponse, CategoryResponse, ProductFilter } from "../../types";
 
 export default function ActiveFilterChips({
   filter,
   onChange,
   onReset,
+  brands,
+  categories,
 }: {
   filter: ProductFilter;
   onChange: (partial: Partial<ProductFilter>) => void;
   onReset: () => void;
+  brands?: BrandResponse[];
+  categories?: CategoryResponse[];
 }) {
-  const chips = useActiveFilterChips(filter, onChange);
+  const chips = useActiveFilterChips(filter, onChange, brands, categories);
 
   if (chips.length === 0) return null;
 
@@ -32,6 +36,7 @@ export default function ActiveFilterChips({
           <button
             className="hover:text-violet-900 transition-colors ml-0.5"
             onClick={chip.onRemove}
+            aria-label={`Bỏ lọc ${chip.label}`}
           >
             <svg
               className="w-3 h-3"

@@ -1,135 +1,25 @@
-// ============================================================
-// features/product/hooks/useProducts.ts
-// ============================================================
-
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import type { ProductResponse, ProductFilter, ProductQueryParams, SortOption } from "../types";
 import { SORT_OPTIONS } from "../types";
 import { productApi } from "../api/productApi";
+import { getErrorMessage } from "@/shared/utils/apiError";
 
-// ─── Constants ───────────────────────────────────────────────
+export const PAGE_SIZE = 12;
 
-const PAGE_SIZE = 20;
-const DEFAULT_FILTER: ProductFilter = {};
-const DEFAULT_SORT: SortOption = "newest";
+export function useProducts(initialFilter: ProductFilter = {}) {
+  const [filter, setFilterState] = useState<ProductFilter>(initialFilter);
+  const [sort, setSortState] = useState<SortOption>("newest");
+  const [page, setPageState] = useState(0);
 
-// ─── Return type ─────────────────────────────────────────────
+  const springSort = SORT_OPTIONS.find((o) => o.value === sort)?.springSort ?? "createdAt,desc";
+  const params: ProductQueryParams = { ...filter, page, size: PAGE_SIZE, sort: springSort };
 
-export interface UseProductsReturn {
-  products: ProductResponse[];
-  totalElements: number;
-  totalPages: number;
-  currentPage: number;
-  isLoading: boolean;
-  isError: boolean;
-  errorMessage: string | null;
-  filter: ProductFilter;
-  sort: SortOption;
-  setFilter: (filter: ProductFilter) => void;
-  updateFilter: (partial: Partial<ProductFilter>) => void;
-  resetFilter: () => void;
-  setSort: (sort: SortOption) => void;
-  setPage: (page: number) => void;
-  refetch: () => void;
-}
-
-// ─── Hook ────────────────────────────────────────────────────
-
-export function useProducts(initialFilter?: ProductFilter): UseProductsReturn {
-  const [products, setProducts]         = useState<ProductResponse[]>([]);
-  const [totalElements, setTotalElements] = useState(0);
-  const [totalPages, setTotalPages]     = useState(0);
-  const [currentPage, setCurrentPage]   = useState(0);
-  const [filter, setFilterState]        = useState<ProductFilter>(initialFilter ?? DEFAULT_FILTER);
-  const [sort, setSortState]            = useState<SortOption>(DEFAULT_SORT);
-  const [page, setPageState]            = useState(0);
-  const [isLoading, setIsLoading]       = useState(false);
-  const [isError, setIsError]           = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Dùng ref để cancel request cũ khi filter/sort thay đổi nhanh
-  const abortRef = useRef<AbortController | null>(null);
-
-const fetchProducts = useCallback(async () => {
-
-  abortRef.current?.abort();
-
-  const controller = new AbortController();
-  abortRef.current = controller;
-
-  setIsLoading(true);
-  setIsError(false);
-  setErrorMessage(null);
-
-  const springSort =
-    SORT_OPTIONS.find(
-      (o) => o.value === sort
-    )?.springSort ?? "createdAt,desc";
-
-  const params: ProductQueryParams = {
-    ...filter,
-    page,
-    size: PAGE_SIZE,
-    sort: springSort,
-  };
-
-  try {
-
-    const data = await productApi.getAll(
-      params,
-      controller.signal // truyền signal
-    );
-
-    if (controller.signal.aborted) return;
-
-    setProducts(data.content);
-    setTotalElements(data.totalElements);
-    setTotalPages(data.totalPages);
-    setCurrentPage(data.number);
-
-  } catch (err) {
-
-    if (
-      err instanceof Error &&
-      (
-        err.name === "CanceledError" ||
-        err.name === "AbortError"
-      )
-    ) {
-      return;
-    }
-
-    setIsError(true);
-
-    setErrorMessage(
-      err instanceof Error
-        ? err.message
-        : "Có lỗi xảy ra khi tải sản phẩm"
-    );
-
-    setProducts([]);
-
-  } finally {
-
-    if (!controller.signal.aborted) {
-      setIsLoading(false);
-    }
-
-  }
-
-}, [filter, sort, page]);
-
-  useEffect(() => {
-    fetchProducts();
-    return () => abortRef.current?.abort();
-  }, [fetchProducts]);
-
-  // ─── Helpers ───────────────────────────────────────────────
-
-  const setFilter = useCallback((f: ProductFilter) => {
-    setFilterState(f);
-    setPageState(0);
-  }, []);
+  const q = useQuery({
+    queryKey: ["products", params],
+    queryFn: ({ signal }) => productApi.getAll(params, signal),
+    placeholderData: keepPreviousData,
+  });
 
   const updateFilter = useCallback((partial: Partial<ProductFilter>) => {
     setFilterState((prev) => ({ ...prev, ...partial }));
@@ -137,7 +27,7 @@ const fetchProducts = useCallback(async () => {
   }, []);
 
   const resetFilter = useCallback(() => {
-    setFilterState(DEFAULT_FILTER);
+    setFilterState({});
     setPageState(0);
   }, []);
 
@@ -151,5 +41,37 @@ const fetchProducts = useCallback(async () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  return { products, totalElements, totalPages, currentPage, isLoading, isError, errorMessage, filter, sort, setFilter, updateFilter, resetFilter, setSort, setPage, refetch: fetchProducts,};
+  const products: ProductResponse[] = q.data?.content ?? [];
+
+  return {
+    products,
+    totalElements: q.data?.totalElements ?? 0,
+    totalPages: q.data?.totalPages ?? 0,
+    currentPage: q.data?.number ?? page,
+    isLoading: q.isLoading,
+    isFetching: q.isFetching,
+    isError: q.isError,
+    errorMessage: q.isError ? getErrorMessage(q.error, "Không thể tải sản phẩm") : null,
+    filter,
+    sort,
+    updateFilter,
+    resetFilter,
+    setSort,
+    setPage,
+    refetch: () => void q.refetch(),
+  };
+}
+
+/** Sản phẩm liên quan: cùng category, loại bỏ sản phẩm hiện tại. */
+export function useRelatedProducts(categoryId: number | undefined, excludeId: number | undefined) {
+  const q = useQuery({
+    queryKey: ["products", "related", categoryId],
+    queryFn: ({ signal }) =>
+      productApi.getAll({ categoryId, page: 0, size: 8, sort: "createdAt,desc" }, signal),
+    enabled: categoryId != null,
+  });
+  return {
+    related: (q.data?.content ?? []).filter((p) => p.productId !== excludeId).slice(0, 4),
+    isLoading: q.isLoading,
+  };
 }

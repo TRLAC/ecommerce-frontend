@@ -1,11 +1,10 @@
+// Khớp OrderItemResponse của BE
 export interface OrderItem {
-  id: number;
+  orderItemId: number;
   productId: number;
   productName: string;
-  productImage: string;
-  variantId?: number;
-  variantName?: string;
+  productImageUrl: string | null;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
+  priceSnapshot: number;
+  subtotal: number;
 }

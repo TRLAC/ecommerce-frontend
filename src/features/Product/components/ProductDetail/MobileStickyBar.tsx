@@ -27,9 +27,6 @@ export default function MobileStickyBar({
             <span className="text-base font-bold text-violet-700 leading-none">
               {formatPrice(product.price)}
             </span>
-            <span className="text-[10px] text-slate-400 line-through mt-0.5">
-              {formatPrice(Math.round(product.price * 1.1))}
-            </span>
           </div>
 
           <button

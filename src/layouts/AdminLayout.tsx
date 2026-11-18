@@ -1,209 +1,160 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import type { ComponentType } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { ChevronDown, LayoutDashboard, LogOut, Menu, Package, ReceiptText, Store, Tags, Undo2, User as UserIcon, Users, X } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store";
-import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import Logo from "@/shared/components/Logo";
+
+type NavItem = { to: string; label: string; icon: ComponentType<{ size?: number }>; end?: boolean };
+
+// Thêm mục menu mới ở đây khi có trang admin tương ứng (Orders, Refunds, Products...)
+const NAV: NavItem[] = [
+  { to: "/admin", label: "Tổng quan", icon: LayoutDashboard, end: true },
+  { to: "/admin/orders", label: "Đơn hàng", icon: ReceiptText },
+  { to: "/admin/refunds", label: "Hoàn tiền", icon: Undo2 },
+  { to: "/admin/products", label: "Sản phẩm", icon: Package },
+  { to: "/admin/categories", label: "Danh mục", icon: Tags },
+  { to: "/admin/users", label: "Người dùng", icon: Users },
+];
+
+const sideLinkCls = ({ isActive }: { isActive: boolean }) =>
+  `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+    isActive
+      ? "bg-violet-600 text-white shadow-sm shadow-violet-600/30"
+      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+  }`;
 
 export default function AdminLayout() {
-  const user = useAuthStore((state) => state.user);
-  const [open, setOpen] = useState(false);
+  const user = useAuthStore((s) => s.user);
   const { logout } = useAuth();
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-   // ✅ Đóng dropdown khi navigate
   useEffect(() => {
-    setOpen(false);
-    setShowSuggestions(false);
+    setMenuOpen(false);
+    setSidebarOpen(false);
   }, [location.pathname]);
 
-  // ✅ Đóng dropdown khi click ra ngoài
- useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setMenuOpen(false);
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
+
+  const sidebar = (
+    <div className="flex h-full flex-col">
+      <div className="flex h-16 items-center justify-between border-b border-slate-100 px-5">
+        <Logo to="/admin" subtitle="Admin" />
+        <button
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Đóng menu"
+          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 lg:hidden"
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        {NAV.map(({ to, label, icon: Icon, end }) => (
+          <NavLink key={to} to={to} end={end} className={sideLinkCls}>
+            <Icon size={19} />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="border-t border-slate-100 p-3">
+        <Link
+          to="/"
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+        >
+          <Store size={19} /> Xem cửa hàng
+        </Link>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50">
-        
-        <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white">
-          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+      {/* Sidebar desktop */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-slate-200 bg-white lg:block">{sidebar}</aside>
 
-              {/* LEFT - Logo */}
-            <Link
-              to="/admin"
-              className="flex items-center gap-3"
-            > 
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-white font-bold">
-                A
-              </div>
+      {/* Sidebar mobile */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setSidebarOpen(false)} />
+          <aside className="absolute inset-y-0 left-0 w-72 bg-white shadow-2xl">{sidebar}</aside>
+        </div>
+      )}
 
-              <h1 className="text-lg font-bold tracking-tight text-slate-900">
-                Admin
-              </h1>
+      <div className="lg:pl-64">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur sm:px-6">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Mở menu"
+            className="rounded-xl p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+          >
+            <Menu size={22} />
+          </button>
+          <div className="hidden lg:block" />
 
-            </Link>
-
-            {/* CENTER - Search */}
-          <div className="relative flex-1 max-w-xl" ref={searchRef}>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setShowSuggestions(true)}
-              placeholder="Tìm kiếm sản phẩm..."
-              className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 pl-4 pr-10 text-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
-            />
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-violet-600 transition">
-              🔍
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              className="flex items-center gap-3 rounded-xl py-1.5 pl-1.5 pr-2 transition hover:bg-slate-100"
+            >
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.fullName} className="h-9 w-9 rounded-full object-cover" />
+              ) : (
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-600 text-sm font-semibold text-white">
+                  {user?.fullName?.charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span className="hidden text-left md:block">
+                <span className="block text-sm font-semibold leading-tight text-slate-900">{user?.fullName}</span>
+                <span className="block text-xs text-slate-500">Quản trị viên</span>
+              </span>
+              <ChevronDown size={16} className={`hidden text-slate-400 transition md:block ${menuOpen ? "rotate-180" : ""}`} />
             </button>
 
-            {/* Suggestions dropdown */}
-            {showSuggestions && (
-              <div className="absolute top-full mt-2 w-full rounded-xl border border-slate-200 bg-white shadow-lg z-50 overflow-hidden">
-                <p className="px-4 py-2 text-xs text-slate-400">Tìm kiếm gần đây</p>
-                {["Áo thun nam oversize", "Giày sneaker trắng"].map((item) => (
-                  <button
-                    key={item}
-                    className="flex w-full items-center gap-3 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition"
-                    onClick={() => { setSearchQuery(item); setShowSuggestions(false); }}
-                  >
-                    🕐 {item}
-                  </button>
-                ))}
-                <p className="px-4 py-2 text-xs text-slate-400">Phổ biến</p>
-                {["Tai nghe không dây", "Ốp lưng điện thoại"].map((item) => (
-                  <button
-                    key={item}
-                    className="flex w-full items-center gap-3 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition"
-                    onClick={() => { setSearchQuery(item); setShowSuggestions(false); }}
-                  >
-                    🔥 {item}
-                  </button>
-                ))}
+            {menuOpen && (
+              <div role="menu" className="absolute right-0 mt-2 w-60 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-200/60">
+                <div className="px-3 py-2.5">
+                  <p className="truncate text-sm font-semibold text-slate-900">{user?.fullName}</p>
+                  <p className="truncate text-xs text-slate-500">{user?.email}</p>
+                </div>
+                <div className="my-1 border-t border-slate-100" />
+                <Link
+                  to="/admin/profile"
+                  role="menuitem"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-violet-50 hover:text-violet-700"
+                >
+                  <UserIcon size={17} className="text-slate-400" /> Thông tin cá nhân
+                </Link>
+                <div className="my-1 border-t border-slate-100" />
+                <button
+                  onClick={logout}
+                  role="menuitem"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-red-500 transition hover:bg-red-50"
+                >
+                  <LogOut size={17} /> Đăng xuất
+                </button>
               </div>
             )}
           </div>
+        </header>
 
-             {/* CENTER - Menu */}
-            <div className="flex items-center gap-8">
-              <Link
-                className="text-sm font-medium text-slate-600 transition hover:text-violet-600"
-                to="/admin"
-              >
-                Dashboard
-              </Link>
-
-              <Link
-                className="text-sm font-medium text-slate-600 transition hover:text-violet-600"
-                to="/admin/products"
-              >
-                Products
-              </Link>
-
-              <Link
-                className="text-sm font-medium text-slate-600 transition hover:text-violet-600"
-                to="/admin/users"
-              >
-                Users
-              </Link>
-          </div>
-
-              {/* RIGHT - User */}
-          <div className="flex items-center gap-4">
-            
-            {/* Notification */}
-            <button className="relative rounded-full p-2 transition hover:bg-slate-100">
-              🔔<span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"></span>
-            </button>
-
-            {/* User */}
-           <div className="relative" ref={dropdownRef}>
-
-              {/* User Button */}
-              <button
-                onClick={() => setOpen(!open)}
-                className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-slate-100"
-              >
-              
-               {/* Avatar */}
-              {user?.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt={user.fullName}
-                  className="h-10 w-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500 text-white font-semibold">
-                  {user?.fullName?.charAt(0)}
-                </div>
-              )}
-
-              {/* Info */}
-              <div className="hidden md:block">
-                <p className="text-sm font-semibold text-slate-900">
-                  {user?.fullName}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {user?.email}
-                </p>
-              </div>
-
-              </button>
-
-              {/* Dropdown */}
-                {open && (
-                  <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
-
-                     {/* Profile */}
-                    <Link
-                      to="/admin/profile"
-                      className="block rounded-xl px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100"
-                    >
-                      👤 Thông tin cá nhân
-                    </Link>
-
-                    <Link
-                      to="/settings"
-                      className="block rounded-xl px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100"
-                    >
-                      ⚙️ Cài đặt
-                    </Link>
-
-                    <div className="my-2 border-t border-slate-200"></div>
-
-                    <button
-                      className="w-full rounded-xl px-4 py-2 text-left text-sm text-red-500 transition hover:bg-red-50"
-                      onClick={logout}
-                    >
-                      🚪 Đăng xuất
-                    </button>
-
-                  </div>
-                )}
-
-            </div>
-          </div>
-          
-        </div>
-      </nav>
-  
-
-      {/* Content */}
-      <main  className="mx-auto max-w-7xl p-6">
-        <Outlet />
-      </main>
-
+        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

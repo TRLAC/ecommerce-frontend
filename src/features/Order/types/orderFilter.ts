@@ -1,7 +1,6 @@
-import { OrderStatus } from './orderStatus';
-
-export interface OrderFilter {
+// BE chỉ nhận phân trang (Pageable) cho GET /api/orders, chưa lọc theo status.
+export interface OrderQuery {
   page?: number;
   size?: number;
-  status?: OrderStatus;
+  sort?: string; // vd "createdAt,desc"
 }

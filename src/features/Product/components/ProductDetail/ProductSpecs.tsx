@@ -9,7 +9,6 @@ formatDate:(s:string)=>string;
 export default function ProductSpecs({
   product,
   isOutOfStock,
-    formatDate,
 }: ProductSpecsProps) {
 
   const specs = [
@@ -57,11 +56,6 @@ export default function ProductSpecs({
       value: isOutOfStock
         ? "Hết hàng"
         : `Còn ${product.stockQuantity} sản phẩm`,
-    },
-
-    {
-      label: "Ngày thêm",
-      value: formatDate(product.createdAt),
     },
 
   ].filter(Boolean);

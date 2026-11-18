@@ -1,7 +1,9 @@
 // features/Checkout/pages/CheckoutPage.tsx
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useAuthStore } from '@/features/auth/store';
+import PageLoader from '@/shared/components/PageLoader';
 import { CheckoutLayout } from '../components/CheckoutLayout';
 import { ShippingInfo } from '../components/ShippingInfo';
 import { PaymentMethodSelector } from '../components/PaymentMethodSelector';
@@ -15,13 +17,18 @@ export const CheckoutPage: React.FC = () => {
     paymentMethod,
     errors,
     isSubmitting,
-    isError,
+    errorMessage,
     items,
     totalPrice,
+    isCartLoading,
     handleChange,
     setPaymentMethod,
     handleSubmit,
   } = useCheckoutForm();
+  const user = useAuthStore((state) => state.user);
+
+  // Chờ giỏ hàng tải xong rồi mới quyết định (tránh bị đẩy về /cart khi tải lại trang)
+  if (isCartLoading) return <PageLoader fullScreen={false} label="Đang tải giỏ hàng..." />;
 
   // Redirect về cart nếu giỏ hàng trống
   if (items.length === 0 && !isSubmitting) {
@@ -35,9 +42,9 @@ export const CheckoutPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <nav aria-label="Breadcrumb">
             <ol className="flex items-center gap-1.5 text-xs text-slate-400">
-              <li><a href="/" className="hover:text-violet-600">Trang chủ</a></li>
+              <li><Link to="/" className="hover:text-violet-600">Trang chủ</Link></li>
               <li>/</li>
-              <li><a href="/cart" className="hover:text-violet-600">Giỏ hàng</a></li>
+              <li><Link to="/cart" className="hover:text-violet-600">Giỏ hàng</Link></li>
               <li>/</li>
               <li className="text-slate-600 font-medium">Thanh toán</li>
             </ol>
@@ -50,12 +57,13 @@ export const CheckoutPage: React.FC = () => {
       <CheckoutLayout
         left={
           <>
-            {isError && (
-              <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-500">
-                Đã xảy ra lỗi khi đặt hàng. Vui lòng thử lại.
+            {errorMessage && (
+              <div role="alert" className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-500">
+                {errorMessage}
               </div>
             )}
             <ShippingInfo
+              recipient={{ fullName: user?.fullName ?? '', phone: user?.phone ?? '' }}
               formData={formData}
               errors={errors}
               onChange={handleChange}
@@ -71,24 +79,19 @@ export const CheckoutPage: React.FC = () => {
             <CheckoutSummary
               items={items.map((item) => ({
                 productId: item.productId,
-                productName: item.productName,
+                productName: item.productName ?? `Sản phẩm #${item.productId}`,
                 productImage: item.productImageUrl ?? '',
                 quantity: item.quantity,
                 price: item.productPrice,
               }))}
               totalAmount={totalPrice}
-              shippingFee={0}
             />
             <PlaceOrderButton
               isLoading={isSubmitting}
               onClick={handleSubmit}
             />
             <p className="text-center text-xs text-slate-400">
-              Bằng cách đặt hàng, bạn đồng ý với{' '}
-              <a href="/terms" className="text-violet-500 underline">
-                Điều khoản dịch vụ
-              </a>{' '}
-              của chúng tôi.
+              Thanh toán online dùng cổng giả lập, không phát sinh giao dịch thật.
             </p>
           </>
         }

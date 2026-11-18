@@ -1,9 +1,7 @@
 import { Link } from "react-router-dom";
 import type { ProductResponse } from "../../types";
 
-import StarRating from "./StarRating";
 import { formatPrice } from "../../utils/productFormat";
-import { MOCK_RATING_SUMMARY } from "../../constants/mockReview";
 
 interface ProductInfoProps {
   product: ProductResponse;
@@ -32,7 +30,7 @@ export default function ProductInfo({
   setWishlisted,
 }: ProductInfoProps) {
 
-  const isOutOfStock = product.stockQuantity === 0;
+  const isOutOfStock = product.stockQuantity <= 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -73,37 +71,12 @@ export default function ProductInfo({
                 {product.name}
               </h1>
     
-              {/* Rating row (mock) */}
-              <div className="flex items-center gap-2">
-                <StarRating rating={MOCK_RATING_SUMMARY.average} />
-                <span className="text-xs font-medium text-slate-700">
-                  {MOCK_RATING_SUMMARY.average}
-                </span>
-                <span className="text-[11px] text-slate-400">
-                  ({MOCK_RATING_SUMMARY.total.toLocaleString("vi-VN")} đánh giá)
-                </span>
-                <div className="w-px h-3 bg-slate-200 hidden sm:block" />
-                <span className="text-[11px] text-slate-400 hidden sm:inline">
-                  ID: #{product.productId}
-                </span>
-              </div>
-    
+              <p className="text-[11px] text-slate-400">Mã sản phẩm: #{product.productId}</p>
+
               {/* Price Block */}
               <div className="bg-violet-50 border border-violet-100 rounded-xl p-4">
                 <div className="text-2xl font-bold text-violet-700 mb-1.5 leading-none">
                   {formatPrice(product.price)}
-                </div>
-                {/* Placeholder for original price / discount — add originalPrice field when API supports it */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-slate-400 line-through">
-                    {formatPrice(Math.round(product.price * 1.1))}
-                  </span>
-                  <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                    -10%
-                  </span>
-                  <span className="text-[11px] text-green-600 font-medium">
-                    Tiết kiệm {formatPrice(Math.round(product.price * 0.1))}
-                  </span>
                 </div>
               </div>
     

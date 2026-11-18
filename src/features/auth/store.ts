@@ -26,10 +26,8 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage", // key trong localStorage
-      partialize: (state) => ({
-        accessToken: state.accessToken,
-        user: state.user,
-      }),
+      // accessToken không lưu localStorage (lấy lại bằng refresh cookie khi mở app)
+      partialize: (state) => ({ user: state.user }),
     }
   )
 );
